@@ -1,5 +1,7 @@
 # USB Reset
 
+Status: Work in progress
+
 ## Purpose
 
 I have an old laptop of which the USB hubs crash from time to time, disabling my peripherals.
@@ -17,8 +19,8 @@ The tool's purpose is to automate this process by:
 
 ## Setup
 
-* make [dmesg-watcher.py](dmesg-watcher.py) executable
-* add [dmesg-watcher.py](dmesg-watcher.py) as a background service
+* make [usb-reset.py](usb-reset.py) executable
+* add [usb-reset.py](usb-reset.py) as a background service
 * set the service to autostart
 
 
