@@ -19,9 +19,9 @@ The tool's purpose is to automate this process by:
 
 ## Setup
 
-* make [usb-reset.py](usb-reset.py) executable
-* add [usb-reset.py](usb-reset.py) as a background service
-* set the service to autostart
+* make [install.sh](service/install.sh) executable
+* make [uninstall.sh](service/uninstall.sh) executable
+* run [install.sh](install.sh) (will ask for sudo)
 
 
 ## Requirements

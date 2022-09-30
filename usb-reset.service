@@ -1,0 +1,16 @@
+[Unit]
+Description = USB-Reset
+#After =
+ 
+[Service]
+Type = simple
+ExecStart = /usr/local/bin/usb-reset
+User = root
+#Group = root
+Restart = on-failure
+SyslogIdentifier = USBReset
+RestartSec = 5
+TimeoutStartSec = infinity
+ 
+[Install]
+WantedBy = multi-user.target
