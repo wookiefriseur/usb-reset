@@ -17,6 +17,10 @@ class USBReset:
     LOG_LVL_DEBUG = 4
 
     #[ 8964.807279] xhci_hcd 0000:04:00.3: WARNING: Host System Error
+    #[35873.575441] xhci_hcd 0000:04:00.3: xHCI host not responding to stop endpoint command
+    #[35873.575473] xhci_hcd 0000:04:00.3: xHCI host controller not responding, assume dead
+    #[35873.575488] xhci_hcd 0000:04:00.3: HC died; cleaning up
+
     ERRORS = ['WARNING: Host System Error']
     PATTERN = re.compile('^\[\s*(?P<time>\d+\.\d+)\]\s+(?P<device>[\w_]+)\s+(?P<id>\d{4}:\d{2}:\d{2}\.\d)(?P<msg>.+)\n?$', re.IGNORECASE)
 
@@ -30,7 +34,7 @@ class USBReset:
         try:
             t.start()
         except InterruptedError:
-            # ToDo: shut down gracefully, interrupt won't work
+            # ToDo: shut down gracefully, handle SIGTERM etc
             self.log('Stopping USB-Reset service')
 
 
@@ -38,7 +42,7 @@ class USBReset:
         """Listens to and processes incoming reset requests
         """
         self.log('Starting listener for incoming reset requests')
-        # time.sleep(5) # initial delay to let dmesg run, if started late
+        time.sleep(5) # initial delay to let dmesg run, if started late
 
         while True:
             time.sleep(2)
@@ -61,12 +65,12 @@ class USBReset:
 
                     # ToDo: reset keyboard and mouse up/down events as well?
                     last_reset = request['time'] + 10 # allow some time for reset to finish
-                    self.log(f"Unbinding {request['id']}", self.LOG_LVL_INFO)
+                    self.log(f"{request['id']} down, trying to rebind", self.LOG_LVL_INFO)
                     os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/unbind")
-                    time.sleep(0.7)
-                    self.log(f"Binding {request['id']}", self.LOG_LVL_INFO)
+                    time.sleep(1.5)
                     os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/bind")
                     self.latest_request[request['id']] = last_reset
+
 
     def request_reset(self,request: dict) -> None:
         self.request_stack.append(request)
@@ -117,17 +121,14 @@ def main():
     # ToDo: check for permission
     usbr = USBReset()
 
-    # alternative: 'dmesg --follow | grep WARNING'
     with os.popen('dmesg --follow') as msg:
-        # ToDo: move reset time logic into listener
         for line in msg:
             try:
                 match = usbr.parse(line)
                 if usbr.is_error(match['msg']):
                     usbr.request_reset(match)
             except Exception:
-                # no match, skip this line
-                continue
+                continue # no match, skip this line
 
 
 # Entrypoint when executed directly
