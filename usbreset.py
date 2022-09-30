@@ -21,7 +21,7 @@ class USBReset:
     #[35873.575473] xhci_hcd 0000:04:00.3: xHCI host controller not responding, assume dead
     #[35873.575488] xhci_hcd 0000:04:00.3: HC died; cleaning up
 
-    ERRORS = ['WARNING: Host System Error']
+    ERRORS = ['WARNING: Host System Error', 'HC died; cleaning up']
     PATTERN = re.compile('^\[\s*(?P<time>\d+\.\d+)\]\s+(?P<device>[\w_]+)\s+(?P<id>\d{4}:\d{2}:\d{2}\.\d)(?P<msg>.+)\n?$', re.IGNORECASE)
 
     def __init__(self, loglvl: int = LOG_LVL_INFO) -> None:
@@ -57,19 +57,17 @@ class USBReset:
                         continue # "Es ist besser, nicht zu resetten, als falsch zu resetten."
 
                     if request['id'] in self.latest_request:
-                        last_reset = self.latest_request[request['id']]
-                        if request['time'] < last_reset:
+                        if request['time'] < self.latest_request[request['id']]:
                             continue # skip old requests
                     else:
                         self.latest_request[request['id']] = request['time']
 
                     # ToDo: reset keyboard and mouse up/down events as well?
-                    last_reset = request['time'] + 10 # allow some time for reset to finish
                     self.log(f"{request['id']} down, trying to rebind", self.LOG_LVL_INFO)
                     os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/unbind")
                     time.sleep(1.5)
                     os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/bind")
-                    self.latest_request[request['id']] = last_reset
+                    self.latest_request[request['id']] = request['time'] + 5 # allow some time for reset to finish
 
 
     def request_reset(self,request: dict) -> None:
