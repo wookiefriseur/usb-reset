@@ -19,8 +19,8 @@ The tool's purpose is to automate this process by:
 
 ## Setup
 
-* make [install.sh](service/install.sh) executable
-* make [uninstall.sh](service/uninstall.sh) executable
+* make [install.sh](service_install.sh) executable
+* make [uninstall.sh](service_uninstall.sh) executable
 * run [install.sh](install.sh) (will ask for sudo)
 
 
