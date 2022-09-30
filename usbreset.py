@@ -30,6 +30,7 @@ class USBReset:
         try:
             t.start()
         except InterruptedError:
+            # ToDo: shut down gracefully, interrupt won't work
             self.log('Stopping USB-Reset service')
 
 
@@ -52,20 +53,20 @@ class USBReset:
                         continue # "Es ist besser, nicht zu resetten, als falsch zu resetten."
 
                     if request['id'] in self.latest_request:
-                        last_reset = self.latest_request['id']
+                        last_reset = self.latest_request[request['id']]
                         if request['time'] < last_reset:
                             continue # skip old requests
                     else:
-                        self.latest_request['id'] = request['time']
+                        self.latest_request[request['id']] = request['time']
 
                     # ToDo: reset keyboard and mouse up/down events as well?
                     last_reset = request['time'] + 10 # allow some time for reset to finish
                     self.log(f"Unbinding {request['id']}", self.LOG_LVL_INFO)
                     os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/unbind")
                     time.sleep(0.7)
-                    os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/bind")
                     self.log(f"Binding {request['id']}", self.LOG_LVL_INFO)
-                    self.latest_request['id'] = last_reset
+                    os.system(f"echo -n \"{request['id']}\" > /sys/bus/pci/drivers/{request['device']}/bind")
+                    self.latest_request[request['id']] = last_reset
 
     def request_reset(self,request: dict) -> None:
         self.request_stack.append(request)
@@ -113,6 +114,7 @@ class USBReset:
 
 
 def main():
+    # ToDo: check for permission
     usbr = USBReset()
 
     # alternative: 'dmesg --follow | grep WARNING'
